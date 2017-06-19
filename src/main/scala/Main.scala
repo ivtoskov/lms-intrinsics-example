@@ -53,6 +53,11 @@ object Main {
           super.remap(m)
         }
       }
+      //
+      // Make sure that we avoid references when those are not required.
+      //
+      override def remapWithRef[A](m: Typ[A]) = remap(m) + " "
+      override def remapWithRef(tpe: String) = tpe
     }
   }
   //
@@ -60,25 +65,25 @@ object Main {
   //
   import AVX2_IR._
   //
-  // Stage a simple function that takes two arrays of Floats, a and b
-  // Extracts 8 elements from the first array, adds them, and writes
+  // Stage a simple function that takes two arrays of Doubles, a and b
+  // Extracts 4 elements from the first array, adds them, and writes
   // the result to array b. LMS assumes that both a and b are immutable.
   // Therefore, lets inform LMS that b will hold our results.
   //
-  def add_first_8elements(a: Rep[Array[Float]], b: Rep[Array[Float]]): Rep[Unit] = {
-    val b_write = reflectMutableSym(b.asInstanceOf[Sym[Array[Float]]])
-    val tmp1 = _mm256_loadu_ps(a, Const(0))
-    val tmp2 = _mm256_add_ps(tmp1, tmp1)
-    _mm256_storeu_ps(b_write, tmp2, Const(0))
+  def add_first_4elements(a: Rep[Array[Double]], b: Rep[Array[Double]]): Rep[Unit] = {
+    val b_write = reflectMutableSym(b.asInstanceOf[Sym[Array[Double]]])
+    val tmp1 = _mm256_loadu_pd(a, Const(0))
+    val tmp2 = _mm256_add_pd(tmp1, tmp1)
+    _mm256_storeu_pd(b_write, tmp2, Const(0))
   }
 
   def main(args: Array[String]) : Unit = {
     val source = new java.io.StringWriter()
     val writer = new java.io.PrintWriter(source)
     //
-    // Generate the C code for the add_first_8elements.
+    // Generate the C code for the add_first_4elements.
     //
-    codegen.emitSource2(add_first_8elements, "add_first_8elements", writer)
+    codegen.emitSource2(add_first_4elements, "add_first_4elements", writer)
     //
     // Print the AVX2 headers.
     //
